@@ -1,0 +1,16 @@
+{
+  "name": "test_alexa_aws",
+  "version": "1.0.0",
+  "description": "Creating tables with Top Sites",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Oleh Flypiv",
+  "license": "ISC",
+  "dependencies": {
+    "alexa-top-sites": "^2.0.1",
+    "awis": "^1.0.9",
+    "create-html": "^4.1.0"
+  }
+}
