@@ -2,6 +2,7 @@ const { byCountry } = require('alexa-top-sites'); // npm package
 const readline = require('readline');
 const fs = require('fs');
 const createHTML = require('create-html'); // npm package
+const csvWriter = require('csv-write-stream'); // npm package
 
 const TO_ALEXA = 'https://www.alexa.com/siteinfo/';
 
@@ -27,9 +28,12 @@ function handlingInputData(countriesCodeStr) {
         countriesCodeStr.toUpperCase().split(' ')
     ));
     
+    // For creating .csv file or files 
+    const includesCSV = ISOCodeArray.includes('CSV');
+
     ISOCodeArray.forEach((code) => {
         if (checkISOCode(code)) {
-            getSitesList(code);
+            getSitesList(code, includesCSV);
         } 
     });
 }
@@ -47,12 +51,16 @@ function checkISOCode(ISOCode) {
     }
 }
 
-function getSitesList(code) {
+function getSitesList(code, includesCSV) {
     // npm package 'alexa-top-sites
     byCountry(code) 
         .then((res) => {
             // res is an object with list Top Sites in current country
-            createHTMLFile(res, code);
+            if (includesCSV) {
+                createCSVFile(res, code);
+            } else {
+                createHTMLFile(res, code);
+            }
         })
         .catch((err) => {
             console.error(err);
@@ -97,7 +105,7 @@ function createTable(list) {
 
     for (let i = 0, rank = 1, length = list.sites.length; i < length; i++, rank++) {
         // Getting domain name for transition to Alexa
-        let domain = list.sites[i].replace(/https?:\/\//, '');
+        let domain = getDomain(list.sites[i]);
 
         tableBody += `
             <tr>
@@ -116,4 +124,24 @@ function createTable(list) {
 
     // Put together a table
     return tableBegin + tableBody + tableEnd;
+}
+
+function createCSVFile(list, currentISOCode) {
+    let writer = csvWriter({ headers: ['Country Ran', 'Site URL', 'Link to Alexa + Global Rank']})
+
+    writer.pipe(fs.createWriteStream(`${ currentISOCode }.csv`));
+    
+    for (let i = 0, rank = 1, length = list.sites.length; i < length; i++, rank++) {
+        // Getting domain name for transition to Alexa
+        let domain = getDomain(list.sites[i]);
+
+        writer.write([rank, list.sites[i], TO_ALEXA + domain]);  
+    }
+
+    writer.end();
+    console.log(`${ currentISOCode }.csv has been saved in root dir`);
+}
+
+function getDomain(strURL) {
+    return strURL.replace(/https?:\/\//, '');
 }
